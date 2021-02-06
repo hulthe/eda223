@@ -1,23 +1,20 @@
 #include "TinyTimber.h"
 #include "sciTinyTimber.h"
 #include "canTinyTimber.h"
+#include "sumParser.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-
-#define BUF_CAPACITY 30
 
 typedef struct {
     Object super;
     int count;
     char c;
 
-    char buf[BUF_CAPACITY];
-    int buflen;
-    int sum;
+    SumParser sum_parser;
 } App;
 
-App app = { initObject(), 0, 'X', {0}, 0, 0 };
+App app = { initObject(), 0, 'X', initSumParser() };
 
 void reader(App*, int);
 void receiver(App*, int);
@@ -38,39 +35,7 @@ void reader(App *self, int c) {
     SCI_WRITECHAR(&sci0, c);
     SCI_WRITE(&sci0, "\'\n");
 
-    if(self->buflen >= BUF_CAPACITY) {
-        return;
-    }
-
-    switch(c) {
-    case 'e':
-        // Parse number
-        self->buf[self->buflen] = '\0';
-        int num = atoi(self->buf);
-        self->sum += num;
-
-        // Clear buffer
-        self->buflen = 0;
-
-        // Convert the sum to a string
-        char print_buf[BUF_CAPACITY];
-        snprintf(print_buf, BUF_CAPACITY, "%d", self->sum);
-
-        // Print the number
-        SCI_WRITE(&sci0, "sum: ");
-        SCI_WRITE(&sci0, print_buf);
-        SCI_WRITE(&sci0, "\n");
-
-        break;
-    case 'F':
-        self->sum = 0;
-        self->buflen = 0;
-        break;
-    default:
-        self->buf[self->buflen] = c;
-        self->buflen = self->buflen + 1;
-        break;
-    }
+    sumParserRead(&self->sum_parser, &sci0, c);
 }
 
 void startApp(App *self, int arg) {

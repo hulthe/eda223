@@ -3,6 +3,7 @@
 
 #include "stm32f4xx.h"
 #include "stm32f4xx_usart.h"
+#include "TinyTimber.h"
 
 #define SCI_BUFSIZE  1024
 
