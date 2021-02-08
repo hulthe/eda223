@@ -44,15 +44,6 @@ new:
 	make bin.s19
 
 upload: bin.s19
-	# Connect to serial tty
-	# FIXME: onlcr is *supposed* to fix the line breaks, but it doesn't...
-	screen -dmS md407 $(STTY) 115200,onlcr
-	
-	# load binary (in background)
-	screen -S md407 -X stuff "load\n"
-	screen -S md407 -X readreg p bin.s19
-	screen -S md407 -X paste p &
-	
-	# attach to screen session
-	screen -r md407
+	# Connect using picocom (also requires minicom to be installed)
+	picocom -q -b 115200 --omap bsdel --imap lfcrlf -t "$$(echo -e 'load\r' && ascii-xfr -sn ./bin.s19)" /dev/ttyUSB0
 
