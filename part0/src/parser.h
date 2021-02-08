@@ -9,11 +9,11 @@ typedef struct {
     char buf[SUM_PARSER_BUF_CAP];
     int buf_len;
     int sum;
-} SumParser;
+} Parser;
 
-#define initSumParser() \
+#define initParser() \
     { {0}, 0, 0 }
 
-void sumParserRead(SumParser* self, Serial* sci, int c);
+void parserInput(Parser* self, Serial* sci, int c);
 
 #endif

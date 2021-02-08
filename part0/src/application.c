@@ -1,7 +1,7 @@
 #include "TinyTimber.h"
 #include "sciTinyTimber.h"
 #include "canTinyTimber.h"
-#include "sumParser.h"
+#include "parser.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -11,10 +11,10 @@ typedef struct {
     int count;
     char c;
 
-    SumParser sum_parser;
+    Parser parser;
 } App;
 
-App app = { initObject(), 0, 'X', initSumParser() };
+App app = { initObject(), 0, 'X', initParser() };
 
 void reader(App*, int);
 void receiver(App*, int);
@@ -35,7 +35,7 @@ void reader(App *self, int c) {
     SCI_WRITECHAR(&sci0, c);
     SCI_WRITE(&sci0, "\'\n");
 
-    sumParserRead(&self->sum_parser, &sci0, c);
+    parserInput(&self->parser, &sci0, c);
 }
 
 void startApp(App *self, int arg) {
