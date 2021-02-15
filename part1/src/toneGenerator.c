@@ -2,8 +2,10 @@
 #include "toneGenerator.h"
 
 #define DAC_OUT (*((volatile uint8_t*) 0x4000741C))
+#define MEASURE_WCET
 
-ToneGenerator toneGenerator = { initObject(), USEC(1136), 10, 0 };
+//ToneGenerator toneGenerator = { initObject(), USEC(1136), 10, 0 };
+ToneGenerator toneGenerator = { initObject(), newWCETSampler("toneGenerator"), USEC(1000), 0, 4, 0 };
 
 int setGeneratorTonePeriod(ToneGenerator* self, int period_us) {
     if(period_us > 0) {
@@ -12,7 +14,6 @@ int setGeneratorTonePeriod(ToneGenerator* self, int period_us) {
     } else {
         return -1;
     }
-
 }
 
 int getGeneratorVolume(ToneGenerator* self, int _) {
@@ -39,7 +40,22 @@ int setGeneratorVolume(ToneGenerator* self, int volume) {
     }
 }
 
+int toneGeneratorDeadline(ToneGenerator* self, int _) {
+    self->enableDeadlines = !self->enableDeadlines;
+    return self->enableDeadlines;
+}
+
 void toneGeneratorPulse(ToneGenerator* self, int high) {
+    Time dl = NULL;
+    if(self->enableDeadlines) {
+        dl = USEC(100);
+    }
+    SEND(self->period, dl, self, toneGeneratorPulse, !high);
+
+#ifdef MEASURE_WCET
+    wcetBegin(&self->wcet);
+#endif
+
     int dac_value;
     if (high) {
         dac_value = 0;
@@ -49,5 +65,7 @@ void toneGeneratorPulse(ToneGenerator* self, int high) {
 
     DAC_OUT = dac_value;
 
-    AFTER(self->period, self, toneGeneratorPulse, !high);
+#ifdef MEASURE_WCET
+    wcetEnd(&self->wcet);
+#endif
 }
