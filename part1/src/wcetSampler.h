@@ -4,7 +4,7 @@
 #include "TinyTimber.h"
 
 typedef struct {
-    char* label;
+    const char* label;
     Time start;
     Time totalMeasuredTime;
     Time largestMeasuredTime;
@@ -15,8 +15,5 @@ typedef struct {
 
 void wcetBegin(WCETSampler* self);
 void wcetEnd(WCETSampler* self);
-
-int wcetGetWorst(WCETSampler* self);
-int wcetGetAverage(WCETSampler* self);
 
 #endif

@@ -6,9 +6,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//CLI cli = {initObject(), NULL, 0, {0}};
-CLI testtesttest = {initObject(), NULL, 0, {0}};
-//CLI testtesttest = {initObject()};
+// uncomment this get a panic
+//CLI cli;
+
+CLI cliHandler = {initObject(), NULL, 0, {0}};
 
 const char* PROMPT = "> ";
 
@@ -20,24 +21,10 @@ typedef struct {
 void read(CLI*, int);
 void printInt(Serial* sci, int i);
 
-
-/*
-m: mute
-p: set frequency, preceeded by a number
-q: increase volume by 1
-a: decrease the volume by 1
-v: set the volume, preceeded by a number
-w: increase busy work by 500
-s: decrease busy work by 500
-k: print the periods for brother John in a given key
-d: enable/disable deadlines
-
-anything else is parsed in the input buffer.
-*/
-
 void initCLI(CLI* self, int sci) {
     self->sci = (Serial*)sci;
-    SCI_WRITE(self->sci, "> ");
+    SCI_WRITE(self->sci, "type \"h<enter>\" for a list of commands\n");
+    SCI_WRITE(self->sci, PROMPT);
 }
 
 int isWhitespace(int c) {
@@ -107,6 +94,18 @@ CMD parseCMD(CLI* self) {
 
 void handleCmd(CLI* self, CMD cmd) {
     switch(cmd.name) {
+    case 'h':;
+        SCI_WRITE(self->sci, "list of commands:\n");
+        SCI_WRITE(self->sci, "  h:       show this text\n");
+        SCI_WRITE(self->sci, "  m:       mute/unmute\n");
+        SCI_WRITE(self->sci, "  p <num>: set period\n");
+        SCI_WRITE(self->sci, "  q:       increase volume by 1\n");
+        SCI_WRITE(self->sci, "  a:       decrease the volume by 1\n");
+        SCI_WRITE(self->sci, "  v <num>: set the volume\n");
+        SCI_WRITE(self->sci, "  w:       increase busy work by 500\n");
+        SCI_WRITE(self->sci, "  s:       decrease busy work by 500\n");
+        SCI_WRITE(self->sci, "  d:       enable/disable deadlines\n");
+        break;
     case 'm':;
         SYNC(&toneGenerator, muteGenerator, NULL);
         break;

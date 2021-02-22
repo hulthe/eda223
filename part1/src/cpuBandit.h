@@ -13,7 +13,7 @@ typedef struct {
     WCETSampler wcet;
 } CPUBandit;
 
-CPUBandit cpuBandit;
+extern CPUBandit cpuBandit;
 
 void doBusyWork(CPUBandit* self, int _);
 void setLoad(CPUBandit* self, int newLoad);

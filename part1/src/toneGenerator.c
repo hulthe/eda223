@@ -2,10 +2,11 @@
 #include "toneGenerator.h"
 
 #define DAC_OUT (*((volatile uint8_t*) 0x4000741C))
-#define MEASURE_WCET
 
-//ToneGenerator toneGenerator = { initObject(), USEC(1136), 10, 0 };
-ToneGenerator toneGenerator = { initObject(), newWCETSampler("toneGenerator"), USEC(1000), 0, 4, 0 };
+// uncomment to measure execution time
+//#define MEASURE_WCET
+
+ToneGenerator toneGenerator = { initObject(), newWCETSampler("toneGenerator"), USEC(1000), 0, 1, 0 };
 
 int setGeneratorTonePeriod(ToneGenerator* self, int period_us) {
     if(period_us > 0) {
@@ -54,6 +55,9 @@ void toneGeneratorPulse(ToneGenerator* self, int high) {
 
 #ifdef MEASURE_WCET
     wcetBegin(&self->wcet);
+    // This function runs too fast to measure, so we use the
+    // loop to to scale up the execution by a factor of 1000
+    //for(int i = 0; i < 1000; i++) {
 #endif
 
     int dac_value;
@@ -66,6 +70,7 @@ void toneGeneratorPulse(ToneGenerator* self, int high) {
     DAC_OUT = dac_value;
 
 #ifdef MEASURE_WCET
+    //}
     wcetEnd(&self->wcet);
 #endif
 }

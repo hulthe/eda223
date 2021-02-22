@@ -15,7 +15,7 @@ typedef struct {
     uint8_t mVol;
 } ToneGenerator;
 
-ToneGenerator toneGenerator;
+extern ToneGenerator toneGenerator;
 
 int setGeneratorTonePeriod(ToneGenerator* self, int period_us);
 

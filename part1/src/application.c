@@ -7,23 +7,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 typedef struct {
     Object super;
-    int count;
-    char c;
-
-    //Parser parser;
 } App;
 
-//App app = { initObject(), 0, 'X', initParser() };
-App app = { initObject(), 0, 'X' };
+App app = { initObject() };
 
 void reader(App*, int);
 void receiver(App*, int);
 
-//Serial sci0 = initSerial(SCI_PORT0, &app, reader);
-Serial sci0 = initSerial(SCI_PORT0, &testtesttest, read);
+Serial sci0 = initSerial(SCI_PORT0, &cliHandler, read);
 
 Can can0 = initCan(CAN_PORT0, &app, receiver);
 
@@ -34,24 +27,16 @@ void receiver(App *self, int unused) {
     //SCI_WRITE(&sci0, msg.buff);
 }
 
-void reader(App *self, int c) {
-    SCI_WRITE(&sci0, "Rcv: \'");
-    SCI_WRITECHAR(&sci0, c);
-    SCI_WRITE(&sci0, "\'\n");
-
-//    parserInput(&self->parser, &sci0, c);
-}
-
 void startApp(App *self, int arg) {
     CANMsg msg;
-
-    ASYNC(&toneGenerator, toneGeneratorPulse, 0);
-    ASYNC(&cpuBandit, doBusyWork, 0);
 
     CAN_INIT(&can0);
 
     SCI_INIT(&sci0);
-    ASYNC(&testtesttest, initCLI, (int)&sci0);
+    ASYNC(&cliHandler, initCLI, (int)&sci0);
+
+    ASYNC(&toneGenerator, toneGeneratorPulse, 0);
+    ASYNC(&cpuBandit, doBusyWork, 0);
 
     msg.msgId = 1;
     msg.nodeId = 1;

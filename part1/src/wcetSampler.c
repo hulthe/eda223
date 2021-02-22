@@ -23,26 +23,13 @@ void wcetEnd(WCETSampler* self) {
             const int STRLEN = 100;
             char s[STRLEN];
             
-            Time retWTime = wcetGetWorst(self);
-            Time retATime = wcetGetAverage(self);
-            snprintf(s, STRLEN, "WCET:\nWorst: %d\nAverage: %d", USEC_OF(retWTime), USEC_OF(retATime));
-            SYNC(&testtesttest, printLine, (int)s);
-            //SYNC(&testtesttest, printLine, (int)self->label);
+            long worst = USEC_OF(self->largestMeasuredTime);
+            long average = USEC_OF(self->totalMeasuredTime) / self->timeSamples;
+
+            snprintf(s, STRLEN, "WCET %s:\nWorst: %ld\nAverage: %ld\nSamples: %d", self->label, worst, average, self->timeSamples);
+            SYNC(&cliHandler, printLine, (int)s);
 
             self->timeSamples += 1;
         }
-    }
-    
-}
-
-int wcetGetWorst(WCETSampler* self) {
-    return self->largestMeasuredTime;
-}
-
-int wcetGetAverage(WCETSampler* self) {
-    if(self->timeSamples == 0) {
-        return 0;
-    } else {
-        return (int)((double)self->totalMeasuredTime / (double)self->timeSamples);
     }
 }

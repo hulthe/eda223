@@ -16,7 +16,7 @@ typedef struct {
     char buf[CLI_BUF_CAP];
 } CLI;
 
-CLI testtesttest;
+extern CLI cliHandler;
 
 // "string" is a char*
 void printLine(CLI* self, int string);
