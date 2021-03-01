@@ -1,7 +1,6 @@
 #include "TinyTimber.h"
 #include "sciTinyTimber.h"
 #include "player.h"
-#include "cpuBandit.h"
 #include "cli.h"
 #include <stdlib.h>
 #include <stdio.h>

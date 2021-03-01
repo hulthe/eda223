@@ -2,7 +2,6 @@
 #include "sciTinyTimber.h"
 #include "canTinyTimber.h"
 #include "toneGenerator.h"
-#include "cpuBandit.h"
 #include "cli.h"
 #include "player.h"
 #include "song.h"
@@ -38,7 +37,6 @@ void startApp(App *self, int arg) {
     ASYNC(&cliHandler, initCLI, (int)&sci0);
 
     ASYNC(&toneGenerator, toneGeneratorPulse, 0);
-    //ASYNC(&cpuBandit, doBusyWork, 0);
     
     msg.msgId = 1;
     msg.nodeId = 1;
