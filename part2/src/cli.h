@@ -3,6 +3,7 @@
 
 #include "TinyTimber.h"
 #include "sciTinyTimber.h"
+#include "canTinyTimber.h"
 
 #define CLI_BUF_CAP 32
 
@@ -17,6 +18,8 @@ typedef struct {
 } CLI;
 
 extern CLI cliHandler;
+
+extern Can can0;
 
 // "string" is a char*
 void printLine(CLI* self, int string);

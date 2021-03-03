@@ -1,7 +1,7 @@
 #include "TinyTimber.h"
 #include "canTinyTimber.h"
 
-//#define	__CAN_LOOPBACK	// Note: requires physical loopback between CAN 1 and 2 jacks
+#define	__CAN_LOOPBACK	// Note: requires physical loopback between CAN 1 and 2 jacks
 
 void DUMP(char *s);
 

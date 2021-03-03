@@ -24,8 +24,9 @@ Can can0 = initCan(CAN_PORT0, &app, receiver);
 void receiver(App *self, int unused) {
     CANMsg msg;
     CAN_RECEIVE(&can0, &msg);
-    //SCI_WRITE(&sci0, "Can msg received: ");
-    //SCI_WRITE(&sci0, msg.buff);
+
+    SYNC(&cliHandler, printLine, (int)"CAN-msg received:");
+    SYNC(&cliHandler, printLine, (int)msg.buff);
 }
 
 void startApp(App *self, int arg) {
