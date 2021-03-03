@@ -12,7 +12,9 @@ const Time NOTE_SILENCE = MSEC(50);
 const Time PLAYER_DEADLINE = USEC(100);
 
 void nextNote(Player* self, int _);
-void notePause(Player* self, int _);
+
+// Time pauseLength
+void notePause(Player* self, int pauseLength);
 
 int getPlayerVolume(Player* self, int _) {
     return self->volume;
@@ -68,24 +70,21 @@ void nextNote(Player* self, int _) {
         BEFORE(PLAYER_DEADLINE, &toneGenerator, unmuteGenerator, NULL);
     }
 
+    Time totalLength = noteLength(self, &note);
+    Time pauseLength = totalLength / 10;
+    Time toneLength = totalLength - pauseLength;
+
     // call notePause after the note has been playing for the appropriate time
-    SEND(noteLength(self, &note), PLAYER_DEADLINE, self, notePause, 0);
+    SEND(toneLength, PLAYER_DEADLINE, self, notePause, pauseLength);
 }
 
-void notePause(Player* self, int _) {
+// Time pauseLength
+void notePause(Player* self, int pauseLength) {
     // mute the tone generator
     BEFORE(PLAYER_DEADLINE, &toneGenerator, muteGenerator, NULL);
 
-    if (self->song != (Song*)NULL && self->currentNote > 0) {
-        Note note = self->song->notes[self->currentNote - 1];
-        Time nl = noteLength(self, &note);
-
-        // play the next note after some amount of silence
-        SEND(nl / 10, PLAYER_DEADLINE, self, nextNote, NULL);
-    } else {
-        // something disturbed the playback (e.g. the song changed), call nextNote as soon as possible
-        ASYNC(self, nextNote, NULL);
-    }
+    // play the next note after some amount of silence
+    SEND((Time)pauseLength, PLAYER_DEADLINE, self, nextNote, NULL);
 }
 
 void playerPlay(Player* self, int song_ptr) {
