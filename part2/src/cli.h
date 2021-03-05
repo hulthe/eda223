@@ -19,12 +19,13 @@ typedef struct {
 
 extern CLI cliHandler;
 
-extern Can can0;
 
 // "string" is a char*
 void printLine(CLI* self, int string);
 
 void read(CLI* self, int);
-void initCLI(CLI* self, int);
+
+// Serial* sci_ptr
+void initCLI(CLI* self, int sci_ptr);
 
 #endif

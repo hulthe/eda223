@@ -21,7 +21,10 @@ extern Player player;
 
 int getPlayerVolume(Player* self, int _);
 int setPlayerVolume(Player* self, int volume);
-int muteUnmutePlayer(Player* self, int _);
+
+int playerIsMuted(Player* self, int _);
+void mutePlayer(Player* self, int _);
+void unmutePlayer(Player* self, int _);
 
 void setPlayerKey(Player* self, int receivedKey);
 void setPlayerTempo(Player* self, int tempo);

@@ -4,11 +4,11 @@
 #include "cli.h"
 #include "can.h"
 #include "util.h"
+#include "candler.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 CLI cliHandler = {initObject(), NULL, 0, {0}};
-Can can0;
 
 const char* PROMPT = "> ";
 
@@ -20,8 +20,8 @@ typedef struct {
 void read(CLI*, int);
 void printInt(Serial* sci, int i);
 
-void initCLI(CLI* self, int sci) {
-    self->sci = (Serial*)sci;
+void initCLI(CLI* self, int sci_ptr) {
+    self->sci = (Serial*)sci_ptr;
     SCI_WRITE(self->sci, "list of songs:\n");
     for(int i = 0; i < SONG_LIST_LEN; i++) {
         SCI_WRITE(self->sci, "  ");
@@ -113,23 +113,24 @@ void handleCmd(CLI* self, CMD cmd) {
         SCI_WRITE(self->sci, "  v <num>: set the volume\n");
         SCI_WRITE(self->sci, "  k <num>: set the key\n");
         SCI_WRITE(self->sci, "  t <num>: set the tempo\n");
+        SCI_WRITE(self->sci, "  l:       toggle leader-mode\n");
         break;
 
     case 'm':;
         {
-            int muted = SYNC(&player, muteUnmutePlayer, NULL);
+            int muted = SYNC(&player, playerIsMuted, 0);
             if (muted) {
-                SCI_WRITE(self->sci, "Muted\n");
-            } else {
+                Command command = {CMD_UNMUTE};
+                SYNC(&candler, sendCommand, (int)&command);
                 SCI_WRITE(self->sci, "Unmuted\n");
+                muted = 0;
             }
-
-            CANMsg msg;
-            msg.msgId = CAN_MSG_UNMUTE;
-            msg.nodeId = CAN_NODE_ID;
-            msg.length = 1;
-            msg.buff[0] = 0;
-            CAN_SEND(&can0, &msg);
+            else {
+                Command command = {CMD_MUTE};
+                SYNC(&candler, sendCommand, (int)&command);
+                SCI_WRITE(self->sci, "Muted\n");
+                muted = 1;
+            }
         }
         break;
 
@@ -137,14 +138,9 @@ void handleCmd(CLI* self, CMD cmd) {
         {
             int volume = SYNC(&player, getPlayerVolume, NULL);
             volume = min(max(volume + 1, 1), 10);
-            ASYNC(&player, setPlayerVolume, volume);
 
-            CANMsg msg;
-            msg.msgId = CAN_MSG_SET_VOLUME;
-            msg.nodeId = CAN_NODE_ID;
-            msg.length = 1;
-            msg.buff[0] = (uint8_t)volume;
-            CAN_SEND(&can0, &msg);
+            Command command = {CMD_SET_VOLUME, volume};
+            SYNC(&candler, sendCommand, (int)&command);
         }
         break;
 
@@ -152,14 +148,9 @@ void handleCmd(CLI* self, CMD cmd) {
         {
             int volume = SYNC(&player, getPlayerVolume, NULL);
             volume = min(max(volume - 1, 1), 10);
-            ASYNC(&player, setPlayerVolume, volume);
 
-            CANMsg msg;
-            msg.msgId = CAN_MSG_SET_VOLUME;
-            msg.nodeId = CAN_NODE_ID;
-            msg.length = 1;
-            msg.buff[0] = (uint8_t)volume;
-            CAN_SEND(&can0, &msg);
+            Command command = {CMD_SET_VOLUME, volume};
+            SYNC(&candler, sendCommand, (int)&command);
         }
         break;
 
@@ -167,15 +158,10 @@ void handleCmd(CLI* self, CMD cmd) {
         {
             int volume = cmd.arg;
             if ((volume > 0) && (volume <= 10)) {
-                ASYNC(&player, setPlayerVolume, volume);
-                SCI_WRITE(self->sci, "New volume set\n");
+                Command command = {CMD_SET_VOLUME, volume};
+                SYNC(&candler, sendCommand, (int)&command);
 
-                CANMsg msg;
-                msg.msgId = CAN_MSG_SET_VOLUME;
-                msg.nodeId = CAN_NODE_ID;
-                msg.length = 1;
-                msg.buff[0] = (uint8_t)volume;
-                CAN_SEND(&can0, &msg);
+                SCI_WRITE(self->sci, "New volume set\n");
             } else {
                 SCI_WRITE(self->sci, "Error! Volume out of range!\nVolumerange: 1 - 10\n");
             }
@@ -189,29 +175,17 @@ void handleCmd(CLI* self, CMD cmd) {
                 printInt(self->sci, SONG_LIST_LEN - 1);
                 SCI_WRITE(self->sci, "].\n");
             } else {
-                Song* song = SONG_LIST[cmd.arg];
-                ASYNC(&player, playerPlay, song);
-
-                CANMsg msg;
-                msg.msgId = CAN_MSG_PLAY_START;
-                msg.nodeId = CAN_NODE_ID;
-                msg.length = 1;
-                msg.buff[0] = 0;
-                CAN_SEND(&can0, &msg);
+                Command command = {CMD_PLAY_START, cmd.arg};
+                SYNC(&candler, sendCommand, (int)&command);
             }
         }
         break;
 
     case 's':; // stop playing
         {
-            ASYNC(&player, playerStop, NULL);
-
-            CANMsg msg;
-            msg.msgId = CAN_MSG_PLAY_STOP;
-            msg.nodeId = CAN_NODE_ID;
-            msg.length = 1;
-            msg.buff[0] = 0;
-            CAN_SEND(&can0, &msg);
+            //ASYNC(&player, playerStop, NULL);
+            Command command = {CMD_PLAY_STOP};
+            SYNC(&candler, sendCommand, (int)&command);
         }
         break;
 
@@ -219,17 +193,12 @@ void handleCmd(CLI* self, CMD cmd) {
         {
             int tempo = cmd.arg;
             if(tempo >= 60 && tempo <= 240) {
-                ASYNC(&player, setPlayerTempo, tempo);
+                Command command = {CMD_SET_TEMPO, tempo};
+                SYNC(&candler, sendCommand, (int)&command);
+
                 SCI_WRITE(self->sci, "Tempo set to ");
                 printInt(self->sci, tempo);
                 SCI_WRITE(self->sci, " bpm\n");
-
-                CANMsg msg;
-                msg.msgId = CAN_MSG_SET_TEMPO;
-                msg.nodeId = CAN_NODE_ID;
-                msg.length = 1;
-                msg.buff[0] = (uint8_t)tempo;
-                CAN_SEND(&can0, &msg);
             } else {
                 SCI_WRITE(self->sci, "Tempo out of range [60..240]\n");
             }
@@ -240,25 +209,32 @@ void handleCmd(CLI* self, CMD cmd) {
         {
             int key = cmd.arg;
             if ((key <= 5) && (key >= -5)) {
-                ASYNC(&player, setPlayerKey, key);
+                Command command = {CMD_SET_KEY, key};
+                SYNC(&candler, sendCommand, (int)&command);
+
                 SCI_WRITE(self->sci, "Now playing in key ");
                 printInt(self->sci, key);
                 SCI_WRITE(self->sci, "\n");
-                
-                CANMsg msg;
-                msg.msgId = CAN_MSG_SET_KEY;
-                msg.nodeId = CAN_NODE_ID;
-                msg.length = 1;
-                msg.buff[0] = (uint8_t)key;
-                CAN_SEND(&can0, &msg);
             }
             else {
                 SCI_WRITE(self->sci, "Key out of range\n");
             }
         }
         break;
+
+    case 'l':; // Toggle leader mode
+    {
+        if(SYNC(&candler, toggleLeaderMode, 0)) {
+            SCI_WRITE(self->sci, "Now running in leader-mode\n");
+        } else {
+            SCI_WRITE(self->sci, "Now running in slave-mode\n");
+        }
+        break;
+    }
+
     case '\0':;
         break;
+
     default:;
         SCI_WRITE(self->sci, "unkown command\n");
         break;

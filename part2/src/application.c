@@ -5,6 +5,7 @@
 #include "cli.h"
 #include "player.h"
 #include "song.h"
+#include "candler.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -19,7 +20,7 @@ void receiver(App*, int);
 
 Serial sci0 = initSerial(SCI_PORT0, &cliHandler, read);
 
-Can can0 = initCan(CAN_PORT0, &app, receiver);
+Can can0 = initCan(CAN_PORT0, &candler, recvCanMsg);
 
 void receiver(App *self, int unused) {
     CANMsg msg;

@@ -29,9 +29,16 @@ int setPlayerVolume(Player* self, int volume) {
     }
 }
 
-int muteUnmutePlayer(Player* self, int _) {
-    self->muted = !self->muted;
+int playerIsMuted(Player* self, int _) {
     return self->muted;
+}
+
+void mutePlayer(Player* self, int _) {
+    self->muted = 1;
+}
+
+void unmutePlayer(Player* self, int _) {
+    self->muted = 0;
 }
 
 void setPlayerKey(Player* self, int receivedKey) {
