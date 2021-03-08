@@ -2,7 +2,6 @@
 #include "sciTinyTimber.h"
 #include "player.h"
 #include "cli.h"
-#include "can.h"
 #include "util.h"
 #include "candler.h"
 #include <stdlib.h>
