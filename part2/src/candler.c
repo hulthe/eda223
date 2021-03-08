@@ -17,8 +17,15 @@ void sendCommand(Candler* self, int command_ptr) {
     CANMsg msg;
     msg.msgId = command->kind;
     msg.nodeId = CAN_NODE_ID;
-    msg.length = 1;
-    msg.buff[0] = command->arg;
+    msg.length = 4;
+
+    uint32_t n = command->arg;
+    msg.buff[0] = (n >> 24) & 0xFF;
+    msg.buff[1] = (n >> 16) & 0xFF;
+    msg.buff[2] = (n >>  8) & 0xFF;
+    msg.buff[3] =  n        & 0xFF;
+
+
     CAN_SEND(&can0, &msg);
 
     // if we are the leader, execute this command directly
@@ -60,7 +67,7 @@ void recvCommand(Candler* self, int command_ptr) {
         break;
         
     case CMD_SET_KEY:;
-        ASYNC(&player, setPlayerKey, (int8_t)command->arg);
+        ASYNC(&player, setPlayerKey, command->arg);
         break;
     }
 }
@@ -78,7 +85,14 @@ void recvCanMsg(Candler* self, int _) {
     if (!self->leader) {
         Command command;
         command.kind = msg.msgId;
-        command.arg = msg.buff[0];
+
+        uint32_t n = 0;
+        n |= ((uint32_t)msg.buff[0]) << 24;
+        n |= ((uint32_t)msg.buff[1]) << 16;
+        n |= ((uint32_t)msg.buff[2]) << 8;
+        n |= ((uint32_t)msg.buff[3]);
+
+        command.arg = (int)n;
 
         recvCommand(self, (int)&command);
     }

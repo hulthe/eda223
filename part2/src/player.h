@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include "TinyTimber.h"
+#include "sioTinyTimber.h"
 #include "song.h"
 #include <stdint.h>
 
@@ -18,6 +19,8 @@ typedef struct {
 } Player;
 
 extern Player player;
+
+extern SysIO sio0;
 
 int getPlayerVolume(Player* self, int _);
 int setPlayerVolume(Player* self, int volume);

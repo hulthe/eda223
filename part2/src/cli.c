@@ -208,7 +208,7 @@ void handleCmd(CLI* self, CMD cmd) {
         {
             int key = cmd.arg;
             if ((key <= 5) && (key >= -5)) {
-                Command command = {CMD_SET_KEY, (int8_t)key};
+                Command command = {CMD_SET_KEY, key};
                 SYNC(&candler, sendCommand, (int)&command);
 
                 SCI_WRITE(self->sci, "Now playing in key ");

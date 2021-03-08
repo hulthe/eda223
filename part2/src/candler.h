@@ -13,8 +13,8 @@
 #define CMD_SET_KEY 7
 
 typedef struct {
-    uint8_t kind;
-    uint8_t arg;
+    int kind;
+    int arg;
 } Command;
 
 typedef struct {

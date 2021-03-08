@@ -1,9 +1,11 @@
 #include "TinyTimber.h"
+#include "sioTinyTimber.h"
 #include "player.h"
 #include "toneGenerator.h"
 #include "frequencies.h"
 #include "cli.h"
 #include "song.h"
+#include "util.h"
 #include <stdio.h>
 
 Player player = { initObject(), (Song*)NULL, 0, MSEC(500), 0, 3, 0, 0};
@@ -65,8 +67,36 @@ void nextNote(Player* self, int _) {
         self->currentNote = 0;
     }
 
-    // start the tone generator with the appropriate settings
     Note note = self->song->notes[self->currentNote++];
+
+    Time totalLength = noteLength(self, &note);
+    Time pauseLength = totalLength / 10;
+    Time toneLength = totalLength - pauseLength;
+
+    { // LED blink
+        int beat = 0;
+        for (int i = 0; i < self->currentNote - 1; i++) {
+            beat += self->song->notes[i].tempo;
+        }
+        
+        int isStartOfBeat = beat % BASE_BEAT == 0;
+        if (isStartOfBeat) {
+            // how many beats does this note last (at least 1)
+            int blinks = max(note.tempo / BASE_BEAT, 1);
+ 
+            // schedule blinks for this note
+            Time bl = 0;
+            Time halfBeatLength = self->baseTempo / 2;
+            for(int i = 0; i < blinks; i++) {
+                SEND(bl, PLAYER_DEADLINE, &sio0, sio_write, 0);
+                bl += halfBeatLength;
+                SEND(bl, PLAYER_DEADLINE, &sio0, sio_write, 1);
+                bl += halfBeatLength;
+            }
+        }
+    }
+
+    // start the tone generator with the appropriate settings
     int tonePeriod = period(note.note, self->key);
     BEFORE(PLAYER_DEADLINE, &toneGenerator, setGeneratorTonePeriod, tonePeriod);
 
@@ -76,10 +106,6 @@ void nextNote(Player* self, int _) {
         BEFORE(PLAYER_DEADLINE, &toneGenerator, setGeneratorVolume, self->volume);
         BEFORE(PLAYER_DEADLINE, &toneGenerator, unmuteGenerator, NULL);
     }
-
-    Time totalLength = noteLength(self, &note);
-    Time pauseLength = totalLength / 10;
-    Time toneLength = totalLength - pauseLength;
 
     // call notePause after the note has been playing for the appropriate time
     SEND(toneLength, PLAYER_DEADLINE, self, notePause, pauseLength);
