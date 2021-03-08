@@ -60,7 +60,7 @@ void recvCommand(Candler* self, int command_ptr) {
         break;
         
     case CMD_SET_KEY:;
-        ASYNC(&player, setPlayerKey, command->arg);
+        ASYNC(&player, setPlayerKey, (int8_t)command->arg);
         break;
     }
 }

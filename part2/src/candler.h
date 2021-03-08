@@ -14,7 +14,7 @@
 
 typedef struct {
     uint8_t kind;
-    int8_t arg;
+    uint8_t arg;
 } Command;
 
 typedef struct {
