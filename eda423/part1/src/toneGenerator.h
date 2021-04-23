@@ -2,13 +2,11 @@
 #define TONE_GENERATOR_H
 
 #include "TinyTimber.h"
-#include "wcetSampler.h"
 #include <stdint.h>
 
 typedef struct {
     Object super;
 
-    WCETSampler wcet;
     Time period;
     int enableDeadlines;
     uint8_t volume;

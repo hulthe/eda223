@@ -42,9 +42,6 @@ void tempoButtonTrig(TempoButton* self, int _) {
             snprintf(s, 100, "PRESS_AND_HOLD for %d.%03ds", SEC_OF(tmp), MSEC_OF(tmp));
             SYNC(&cliHandler, printLine, (int)s);
             self->firstPress = 1;
-
-            Command command = {CMD_SET_TEMPO, 120};
-            SYNC(&candler, sendCommand, (int)&command);
         }
         break;
     }
@@ -70,19 +67,6 @@ void tempoButtonClick(TempoButton* self, int _) {
     char s[100];
     snprintf(s, 100, "PRESS_MOMENTARY for %d.%03ds", SEC_OF(sinceLast), MSEC_OF(sinceLast));
     SYNC(&cliHandler, printLine, (int)s);
-
-    if (sinceLast >= MSEC(200) && sinceLast <= MSEC(2000)) {
-        int bpm = timeToBPM(sinceLast);
-
-        char s[100];
-        snprintf(s, 100, "Nice beat. Setting BPM to %d.", bpm);
-        SYNC(&cliHandler, printLine, (int)s);
-
-        Command command = {CMD_SET_TEMPO, bpm};
-        SYNC(&candler, sendCommand, (int)&command);
-    } else {
-        ASYNC(&cliHandler, printLine, (int)"Tempo out of range [200..2000]ms");
-    }
 }
 
 void pressAndHoldTrigger(TempoButton* self, int pressId) {

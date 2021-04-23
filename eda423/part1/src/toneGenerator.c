@@ -6,7 +6,7 @@
 // uncomment to measure execution time
 //#define MEASURE_WCET
 
-ToneGenerator toneGenerator = { initObject(), newWCETSampler("toneGenerator"), USEC(1000), 1, 0, 3 };
+ToneGenerator toneGenerator = { initObject(), USEC(1000), 1, 0, 3 };
 
 int setGeneratorTonePeriod(ToneGenerator* self, int period_us) {
     if(period_us > 0) {

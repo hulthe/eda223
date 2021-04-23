@@ -11,16 +11,31 @@
 #define CMD_SET_VOLUME 5
 #define CMD_SET_TEMPO 6
 #define CMD_SET_KEY 7
+#define CMD_HELLO 8
 
 typedef struct {
     int kind;
     int arg;
 } Command;
 
+#define MIN_MESSAGE_PERIOD SEC(2)
+
+#define CAN_BUFFER_CAPACITY 8
+
+typedef struct {
+    int currPlace;
+    int length;
+    CANMsg array[CAN_BUFFER_CAPACITY];
+} CANBuffer;
+
 typedef struct {
     Object super;
+    Time lastMsgRecieved;
+    CANBuffer buffer;
     uint8_t leader;
+    uint8_t nextMsgId;
 } Candler;
+
 
 extern Candler candler;
 
@@ -36,7 +51,7 @@ void sendCommand(Candler* self, int command);
 // Executes a command on the local board
 //
 // Command command
-void recvCommand(Candler* self, int command);
+void execCommand(Candler* self, int command);
 
 void recvCanMsg(Candler* self, int _);
 

@@ -24,8 +24,6 @@ typedef struct {
 #define newTempoButton(sio) \
     {initObject(), (SysIO*)sio, PRESSED, 1, 0, initTimer(), initTimer(), 0}
 
-//extern TempoButton tempoButton;
-
 void initTempoButton(TempoButton*, int _);
 void tempoButtonTrig(TempoButton*, int _);
 
