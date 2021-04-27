@@ -44,6 +44,6 @@ new:
 	make bin.s19
 
 upload: bin.s19
-	# Connect using picocom (also requires minicom to be installed)
-	picocom -q -b 115200 --omap bsdel --imap lfcrlf -t "$$(echo -e 'load\r' && ascii-xfr -sn ./bin.s19)" /dev/ttyUSB0
-
+	# Connect using picocom
+	sleep 1 && cat bin.s19 > /dev/ttyUSB0 && sleep 1 && echo -ne "go\r" > /dev/ttyUSB0 &
+	picocom -q -b 115200 --omap bsdel --imap lfcrlf -t "$$(echo -e 'load\r')" /dev/ttyUSB0
