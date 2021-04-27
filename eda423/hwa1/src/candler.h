@@ -18,9 +18,9 @@ typedef struct {
     int arg;
 } Command;
 
-#define MIN_MESSAGE_PERIOD SEC(2)
+#define MIN_MESSAGE_PERIOD SEC(1)
 
-#define CAN_BUFFER_CAPACITY 8
+#define CAN_BUFFER_CAPACITY 10
 
 typedef struct {
     int currPlace;
@@ -34,6 +34,7 @@ typedef struct {
     CANBuffer buffer;
     uint8_t leader;
     uint8_t nextMsgId;
+    int SeqNum;
 } Candler;
 
 
@@ -58,6 +59,7 @@ void recvCanMsg(Candler* self, int _);
 // returns true if the candler is now in leader mode
 int toggleLeaderMode(Candler* self, int _);
 
+void toggleSeqNum(Candler*, int _);
 
 
 #endif

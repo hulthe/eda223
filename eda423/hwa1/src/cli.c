@@ -113,6 +113,7 @@ void handleCmd(CLI* self, CMD cmd) {
         SCI_WRITE(self->sci, "  k <num>: set the key\n");
         SCI_WRITE(self->sci, "  t <num>: set the tempo\n");
         SCI_WRITE(self->sci, "  l:       toggle leader-mode\n");
+        SCI_WRITE(self->sci, "  f:       toggle sequence number of CAN messages\n");
         break;
 
     case 'm':;
@@ -231,11 +232,17 @@ void handleCmd(CLI* self, CMD cmd) {
         break;
     }
 
+    case 'f':;
+    {
+        ASYNC(&candler, toggleSeqNum, 0);
+        break;
+    }
+
     case '\0':;
         break;
 
     default:;
-        SCI_WRITE(self->sci, "unkown command\n");
+        SCI_WRITE(self->sci, "unknown command\n");
         break;
     }
 }

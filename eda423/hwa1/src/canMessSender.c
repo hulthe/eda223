@@ -1,3 +1,29 @@
+#include "canMessSender.h"
+#include "candler.h"
+#include "cli.h"
+
+void canMessSender(CanMessSender* self, int startId) {
+    SYNC(&cliHandler, printLine, (int)"senderLoop");
+
+    if (startId != self->startId) {
+        return;
+    }
+
+    AFTER(self->period, self, canMessSender, startId);
+
+    Command cmd = {CMD_HELLO};
+    SYNC(&candler, sendCommand, (int)&cmd);
+}
+
+void canMessSenderStart(CanMessSender* self, int _) {
+    SYNC(&cliHandler, printLine, (int)"senderStart");
+    ASYNC(self, canMessSender, self->startId);
+}
+void canMessSenderStop(CanMessSender* self, int _) {
+    SYNC(&cliHandler, printLine, (int)"senderStop");
+    self->startId += 1;
+}
+
 /*#include "tempoButton.h"
 #include "cli.h"
 #include "candler.h"

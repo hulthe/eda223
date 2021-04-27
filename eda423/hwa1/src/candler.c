@@ -22,7 +22,7 @@ void sendCommand(Candler* self, int command_ptr) {
     // send message on CAN-bus
     CANMsg msg;
     msg.msgId = self->nextMsgId++;
-    msg.buff[0] = command->kind;
+    msg.buff[0] = (uchar)command->kind;
     msg.nodeId = CAN_NODE_ID;
     msg.length = 5;
 
@@ -86,7 +86,7 @@ void execCommand(Candler* self, int command_ptr) {
 
 void deliverCanMsg(Candler* self, CANMsg msg) {
     Command command;
-    command.kind = msg.buff[0];
+    command.kind = (int)msg.buff[0];
 
     uint32_t n = 0;
     n |= ((uint32_t)msg.buff[1]) << 24;
@@ -99,12 +99,14 @@ void deliverCanMsg(Candler* self, CANMsg msg) {
 }
 
 void popBuffer(Candler* self, int slot) {
-    SYNC(&cliHandler, printLine, (int)"Buffer will be popped");
     CANMsg msg = self->buffer.array[slot];
-    self->buffer.length--;
+    self->buffer.length -= 1;
 
     deliverCanMsg(self, msg);
-    SYNC(&cliHandler, printLine, (int)"Buffer have been popped");
+}
+
+void toggleSeqNum(Candler* self, int _) {
+    self->SeqNum =  !self->SeqNum;
 }
 
 void recvCanMsg(Candler* self, int _) {
@@ -113,7 +115,9 @@ void recvCanMsg(Candler* self, int _) {
     CAN_RECEIVE(&can0, &msg);
 
     char s[100];
-    snprintf(s, 100, "CAN command received. msgId=%d kind=%d", msg.msgId, msg.buff[0]);
+    if(self->SeqNum == 1) {
+        snprintf(s, 100, "CAN command received. msgId=%d kind=%d", msg.msgId, msg.buff[0]);
+    }
     SYNC(&cliHandler, printLine, (int)s);
 
     // if board is in slave-mode, execute the command
@@ -127,22 +131,18 @@ void recvCanMsg(Candler* self, int _) {
         SYNC(&cliHandler, printLine, (int)s);
 
         if (now >= target) {
-            SYNC(&cliHandler, printLine, (int)"Message will be handled now");
             deliverCanMsg(self, msg);
             self->lastMsgRecieved = now;
-            SYNC(&cliHandler, printLine, (int)"Message has been handled");
         } else if (self->buffer.length >= CAN_BUFFER_CAPACITY) {
             // no more space in buffer
+            SYNC(&cliHandler, printLine, (int)"Message buffer is full");
         } else {
-            SYNC(&cliHandler, printLine, (int)"Messaged will be added to buffer");
             int index = self->buffer.currPlace;
             self->buffer.currPlace = (index + 1) % CAN_BUFFER_CAPACITY;
             self->buffer.length += 1;
             self->buffer.array[index] = msg;
             self->lastMsgRecieved = target;
-            SYNC(&cliHandler, printLine, (int)"Message added");
             AFTER(target - now, self, popBuffer, index);
-            SYNC(&cliHandler, printLine, (int)"Popbuffer scheduled");
         }
     }
 }

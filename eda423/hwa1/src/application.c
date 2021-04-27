@@ -7,7 +7,9 @@
 #include "player.h"
 #include "song.h"
 #include "candler.h"
+#include "userButton.h"
 #include "tempoButton.h"
+#include "canMessSender.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -25,8 +27,11 @@ Serial sci0 = initSerial(SCI_PORT0, &cliHandler, read);
 Can can0 = initCan(CAN_PORT0, &candler, recvCanMsg);
 
 extern SysIO sio0;
-TempoButton tempoButton = newTempoButton(&sio0);
-SysIO sio0 = initSysIO(SIO_PORT0, &tempoButton, tempoButtonTrig);
+UserButton userButton = newUserButton(&sio0);
+SysIO sio0 = initSysIO(SIO_PORT0, &userButton, userButtonTrig);
+
+TempoButton tempoButton = newTempoButton();
+CanMessSender canMessSender = newCanMessSender(MSEC(500));
 
 void receiver(App *self, int unused) {
     CANMsg msg;
@@ -43,7 +48,18 @@ void startApp(App *self, int arg) {
     ASYNC(&cliHandler, initCLI, (int)&sci0);
 
     SIO_INIT(&sio0);
-    ASYNC(&tempoButton, initTempoButton, 0);
+
+    ButtonConfig buttonConfig = emptyButtonConfig();
+
+//#define PROBLEM_2
+#ifndef PROBLEM_2
+    buttonConfig.onExitPressMomentary = foreignMethod(&tempoButton, tempoButtonTap);
+    buttonConfig.onEnterPressAndHold = foreignMethod(&tempoButton, tempoButtonReset);
+#else
+    buttonConfig.onEnterPressAndHold = foreignMethod(&canMessSender, canMessSenderStart);
+    buttonConfig.onExitPressAndHold = foreignMethod(&canMessSender, canMessSenderStop);
+#endif
+    SYNC(&userButton, initUserButton, (int)&buttonConfig);
 
     ASYNC(&toneGenerator, toneGeneratorPulse, 0);
 }
