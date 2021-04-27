@@ -45,5 +45,5 @@ new:
 
 upload: bin.s19
 	# Connect using picocom
-	sleep 1 && cat bin.s19 > /dev/ttyUSB0 && sleep 1 && echo -ne "go\r" > /dev/ttyUSB0 &
-	picocom -q -b 115200 --omap bsdel --imap lfcrlf -t "$$(echo -e 'load\r')" /dev/ttyUSB0
+	sleep 1 && printf "load\r" >/dev/ttyUSB0 && sleep 1 && cat bin.s19 >/dev/ttyUSB0 && sleep 1 && printf "go\r" >/dev/ttyUSB0 &
+	picocom -q -b 115200 --omap bsdel --imap lfcrlf /dev/ttyUSB0
