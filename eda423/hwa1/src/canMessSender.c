@@ -1,4 +1,4 @@
-#include "tempoButton.h"
+/*#include "tempoButton.h"
 #include "cli.h"
 #include "candler.h"
 #include "sioTinyTimber.h"
@@ -89,4 +89,4 @@ void sendMessBurst(TempoButton* self, int pressId) {
         Command command = {CMD_HELLO};
         SYNC(&candler, sendCommand, (int)&command);
     }
-}
+}*/
