@@ -8,9 +8,9 @@ OBJS := obj/dispatch.o $(subst .c,.o,$(subst src/,obj/,$(CSRC))) $(subst .c,.o,$
 DSRC := $(shell ls driver/src/*.c)
 DOBJ := $(subst .c,.o,$(subst src/,obj/,$(DSRC)))
 
-LNKR := arm-none-eabi-g++ -g -Wall --specs=nano.specs -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mcpu=cortex-m4 -nostartfiles -T ./md407-ram.x -z muldefs
+LNKR := arm-none-eabi-g++ -g -Wall -Wcast-align -mno-unaligned-access --specs=nano.specs -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mcpu=cortex-m4 -nostartfiles -T ./md407-ram.x -z muldefs
 
-CPLR := arm-none-eabi-gcc -g -O0 -Wall -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fverbose-asm -DSTM32F40_41xxx --specs=nano.specs
+CPLR := arm-none-eabi-gcc -g -O0 -Wall -Wcast-align -mno-unaligned-access -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fverbose-asm -DSTM32F40_41xxx --specs=nano.specs
 
 OBCP := arm-none-eabi-objcopy -S -O srec
 
