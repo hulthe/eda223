@@ -1,12 +1,13 @@
 #include "TinyTimber.h"
 #include "toneGenerator.h"
+#include "lfo.h"
 
 #define DAC_OUT (*((volatile uint8_t*) 0x4000741C))
 
 // uncomment to measure execution time
 //#define MEASURE_WCET
 
-ToneGenerator toneGenerator = { initObject(), USEC(1000), 1, 0, 3 };
+ToneGenerator toneGenerator = newToneGenerator();
 
 int setGeneratorTonePeriod(ToneGenerator* self, int period_us) {
     if(period_us > 0) {
@@ -42,6 +43,10 @@ int setGeneratorVolume(ToneGenerator* self, int volume) {
     }
 }
 
+void setGeneratorLFO(ToneGenerator* self, int lfo) {
+    self->lfo = *((LFO*)lfo);
+}
+
 int toneGeneratorDeadline(ToneGenerator* self, int _) {
     self->enableDeadlines = !self->enableDeadlines;
     return self->enableDeadlines;
@@ -52,7 +57,13 @@ void toneGeneratorPulse(ToneGenerator* self, int high) {
     if(self->enableDeadlines) {
         dl = USEC(100);
     }
-    SEND(self->period, dl, self, toneGeneratorPulse, !high);
+
+    Time period = self->period;
+    if(self->lfo.param == Period) {
+        period = lfoModulate(&self->lfo, self->period);
+    }
+
+    SEND(period, dl, self, toneGeneratorPulse, !high);
 
 #ifdef MEASURE_WCET
     wcetBegin(&self->wcet);
@@ -66,6 +77,15 @@ void toneGeneratorPulse(ToneGenerator* self, int high) {
         dac_value = 0;
     } else {
         dac_value = getGeneratorVolume(self, 0);
+
+        // WCET including modulation:
+        // - Best: 180ns
+        // - Worst: 1560ns
+        // - Average: 853ns
+        // - Samples: 1000
+        if (self->lfo.param == Volume) {
+            dac_value = lfoModulate(&self->lfo, dac_value);
+        }
     }
 
     DAC_OUT = dac_value;

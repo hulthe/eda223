@@ -5,10 +5,12 @@
 #include "cli.h"
 #include <stdio.h>
 
-Candler candler = {initObject(), 0, {0, 0, {}}, 1, 0};
+Candler candler = {initObject(), newWCETSampler("Candler", 30), 0, {0, 0, {}}, 1, 0};
 
 #define ENABLE_CAN
 #define REGULATOR
+//#define MEASURE_REGULATOR_WCET
+//#define MEASURE_POPBUFFER_WCET
 
 CANBuffer canbuffer;
 
@@ -95,40 +97,63 @@ void deliverCanMsg(Candler* self, CANMsg msg) {
     n |= ((uint32_t)msg.buff[4]);
     command.arg = (int)n;
 
+    if(self->canId == 1) {
+        char s[100];
+        snprintf(s, 100, "CAN command delivered. msgId=%d kind=%d", msg.msgId, msg.buff[0]);
+        SYNC(&cliHandler, printLine, (int)s);
+    }
+
     execCommand(self, (int)&command);
 }
 
 void popBuffer(Candler* self, int slot) {
+#ifdef MEASURE_POPBUFFER_WCET
+    wcetBegin(&self->wcet);
+#endif
+
     CANMsg msg = self->buffer.array[slot];
     self->buffer.length -= 1;
 
     deliverCanMsg(self, msg);
+
+    if (self->buffer.length > 0) {
+        AFTER(MIN_MESSAGE_PERIOD, self, popBuffer, (slot + 1) % CAN_BUFFER_CAPACITY);
+    }
+
+#ifdef MEASURE_POPBUFFER_WCET
+    wcetEnd(&self->wcet);
+#endif
 }
 
-void toggleSeqNum(Candler* self, int _) {
-    self->SeqNum =  !self->SeqNum;
+void toggleCanId(Candler* self, int _) {
+    self->canId =  !self->canId;
+    if(self->canId) {
+      ASYNC(&cliHandler, printLine, (int)"CAN ID enabled");
+    }
+    else {
+      ASYNC(&cliHandler, printLine, (int)"CAN ID disabled");}
 }
 
 void recvCanMsg(Candler* self, int _) {
+#ifdef MEASURE_REGULATOR_WCET
+    wcetBegin(&self->wcet);
+#endif
+
     // parse the can-msg into a Command struct
     CANMsg msg;
     CAN_RECEIVE(&can0, &msg);
 
-    char s[100];
-    if(self->SeqNum == 1) {
-        snprintf(s, 100, "CAN command received. msgId=%d kind=%d", msg.msgId, msg.buff[0]);
+    if(self->canId == 1) {
+        char s[100];
+        snprintf(s, 100, "CAN command arrived. msgId=%d kind=%d", msg.msgId, msg.buff[0]);
+        SYNC(&cliHandler, printLine, (int)s);
     }
-    SYNC(&cliHandler, printLine, (int)s);
 
     // if board is in slave-mode, execute the command
     if (!self->leader) {
         Timer baseline0 = initTimer();
         Time now = T_SAMPLE(&baseline0);
         Time target = self->lastMsgRecieved + MIN_MESSAGE_PERIOD;
-
-        char s[100];
-        snprintf(s, 100, "now=%d.%03d target=%d.%03d", SEC_OF(now), MSEC_OF(now), SEC_OF(target), MSEC_OF(target));
-        SYNC(&cliHandler, printLine, (int)s);
 
         if (now >= target) {
             deliverCanMsg(self, msg);
@@ -139,12 +164,18 @@ void recvCanMsg(Candler* self, int _) {
         } else {
             int index = self->buffer.currPlace;
             self->buffer.currPlace = (index + 1) % CAN_BUFFER_CAPACITY;
-            self->buffer.length += 1;
             self->buffer.array[index] = msg;
             self->lastMsgRecieved = target;
-            AFTER(target - now, self, popBuffer, index);
+
+            if (self->buffer.length++ == 0) {
+                AFTER(target - now, self, popBuffer, index);
+            }
         }
     }
+
+#ifdef MEASURE_REGULATOR_WCET
+    wcetEnd(&self->wcet);
+#endif
 }
 
 int toggleLeaderMode(Candler* self, int _) {

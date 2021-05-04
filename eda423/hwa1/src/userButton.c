@@ -6,7 +6,6 @@
 #include <stdio.h>
 
 void pressAndHoldTrigger(UserButton*, int pressIndex);
-void sendMessBurst(UserButton*, int pressId);
 
 void initUserButton(UserButton* self, int config_ptr) {
     ButtonConfig* config = (ButtonConfig*)config_ptr;
@@ -40,7 +39,7 @@ void userButtonTrig(UserButton* self, int _) {
 
         ForeignMethod fm = self->buttonConfig.onEnterPressMomentary;
         if(fm.obj) {
-            SYNC(fm.obj, fm.meth, 0);
+            ASYNC(fm.obj, fm.meth, 0);
         }
         break;
     case RELEASED:;
@@ -54,21 +53,17 @@ void userButtonTrig(UserButton* self, int _) {
         if (tmp <= MSEC(2000)) {
             ForeignMethod fm = self->buttonConfig.onExitPressMomentary;
             if(fm.obj) {
-                SYNC(fm.obj, fm.meth, 0);
+                ASYNC(fm.obj, fm.meth, 0);
             }
         } else {
-            char s[100];
-            snprintf(s, 100, "PRESS_AND_HOLD for %d.%03ds", SEC_OF(tmp), MSEC_OF(tmp));
-            SYNC(&cliHandler, printLine, (int)s);
-            //self->firstPress = 1;
-
             ForeignMethod fm = self->buttonConfig.onExitPressAndHold;
             if(fm.obj) {
-                SYNC(fm.obj, fm.meth, 0);
+                ASYNC(fm.obj, fm.meth, 0);
             }
 
-            //Command command = {CMD_SET_TEMPO, 120};
-            //SYNC(&candler, sendCommand, (int)&command);
+            char s[100];
+            snprintf(s, 100, "exit PRESS_AND_HOLD after %d.%03ds", SEC_OF(tmp), MSEC_OF(tmp));
+            SYNC(&cliHandler, printLine, (int)s);
         }
         break;
     }
@@ -76,21 +71,11 @@ void userButtonTrig(UserButton* self, int _) {
 
 void pressAndHoldTrigger(UserButton* self, int pressId) {
     if (self->pressId == pressId) {
-        SYNC(&cliHandler, printLine, (int)"PRESS-AND-HOLD");
-
+        ASYNC(&cliHandler, printLine, (int)"enter PRESS-AND-HOLD");
+ 
         ForeignMethod fm = self->buttonConfig.onEnterPressAndHold;
         if(fm.obj) {
             ASYNC(fm.obj, fm.meth, 0);
         }
     }
-}
-
-void sendMessBurst(UserButton* self, int pressId) {
-    if(self->pressId == pressId) {
-        // send message every 500 msec if button is pressed and held
-        AFTER(MSEC(500), self, sendMessBurst, pressId);
-
-        Command command = {CMD_HELLO};
-        SYNC(&candler, sendCommand, (int)&command);
-    }
-}
+}   

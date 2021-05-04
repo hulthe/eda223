@@ -3,6 +3,7 @@
 
 #include "TinyTimber.h"
 #include "canTinyTimber.h"
+#include "wcetSampler.h"
 
 #define CMD_PLAY_START 1
 #define CMD_PLAY_STOP 2
@@ -20,7 +21,7 @@ typedef struct {
 
 #define MIN_MESSAGE_PERIOD SEC(1)
 
-#define CAN_BUFFER_CAPACITY 10
+#define CAN_BUFFER_CAPACITY 100
 
 typedef struct {
     int currPlace;
@@ -30,13 +31,13 @@ typedef struct {
 
 typedef struct {
     Object super;
+    WCETSampler wcet;
     Time lastMsgRecieved;
     CANBuffer buffer;
     uint8_t leader;
     uint8_t nextMsgId;
-    int SeqNum;
+    int canId;
 } Candler;
-
 
 extern Candler candler;
 
@@ -59,7 +60,8 @@ void recvCanMsg(Candler* self, int _);
 // returns true if the candler is now in leader mode
 int toggleLeaderMode(Candler* self, int _);
 
-void toggleSeqNum(Candler*, int _);
+// toggle printing info about arriving can messages
+void toggleCanId(Candler*, int _);
 
 
 #endif

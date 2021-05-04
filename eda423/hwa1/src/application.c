@@ -3,6 +3,7 @@
 #include "sioTinyTimber.h"
 #include "canTinyTimber.h"
 #include "toneGenerator.h"
+#include "lfo.h"
 #include "cli.h"
 #include "player.h"
 #include "song.h"
@@ -12,6 +13,8 @@
 #include "canMessSender.h"
 #include <stdlib.h>
 #include <stdio.h>
+
+#define PROBLEM_2
 
 typedef struct {
     Object super;
@@ -30,8 +33,11 @@ extern SysIO sio0;
 UserButton userButton = newUserButton(&sio0);
 SysIO sio0 = initSysIO(SIO_PORT0, &userButton, userButtonTrig);
 
+#ifndef PROBLEM_2
 TempoButton tempoButton = newTempoButton();
+#else
 CanMessSender canMessSender = newCanMessSender(MSEC(500));
+#endif
 
 void receiver(App *self, int unused) {
     CANMsg msg;
@@ -50,8 +56,6 @@ void startApp(App *self, int arg) {
     SIO_INIT(&sio0);
 
     ButtonConfig buttonConfig = emptyButtonConfig();
-
-//#define PROBLEM_2
 #ifndef PROBLEM_2
     buttonConfig.onExitPressMomentary = foreignMethod(&tempoButton, tempoButtonTap);
     buttonConfig.onEnterPressAndHold = foreignMethod(&tempoButton, tempoButtonReset);

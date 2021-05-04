@@ -7,6 +7,7 @@
 #include "song.h"
 #include "util.h"
 #include <stdio.h>
+#include "lfo.h"
 
 Player player = { initObject(), (Song*)NULL, 0, MSEC(500), 0, 3, 0, 0};
 
@@ -72,6 +73,16 @@ void nextNote(Player* self, int _) {
     Time totalLength = noteLength(self, &note);
     Time pauseLength = totalLength / 10;
     Time toneLength = totalLength - pauseLength;
+
+    // get LFO settings
+    LFO lfo;
+    SYNC(&lfOscillator, copyLFO, (int)&lfo);
+    SYNC(&toneGenerator, setGeneratorLFO, (int)&lfo);
+
+    // Modulate tempo
+    if(lfo.param == Tempo) {
+        toneLength = lfoModulate(&lfo, toneLength);
+    }
 
     { // LED blink
         int beat = 0;

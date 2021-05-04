@@ -4,6 +4,7 @@
 #include "cli.h"
 #include "util.h"
 #include "candler.h"
+#include "lfo.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -113,7 +114,11 @@ void handleCmd(CLI* self, CMD cmd) {
         SCI_WRITE(self->sci, "  k <num>: set the key\n");
         SCI_WRITE(self->sci, "  t <num>: set the tempo\n");
         SCI_WRITE(self->sci, "  l:       toggle leader-mode\n");
-        SCI_WRITE(self->sci, "  f:       toggle sequence number of CAN messages\n");
+        SCI_WRITE(self->sci, "  c:       toggle ID of CAN messages\n");
+        SCI_WRITE(self->sci, "  i <num>: set the LFO intensity\n");
+        SCI_WRITE(self->sci, "  w <num>: set the LFO waveform. 1 for square wave, 2 for sawtooth wave and 3 for sinus wave\n");
+        SCI_WRITE(self->sci, "  f <num>: Set the LFO frequency\n");
+        SCI_WRITE(self->sci, "  o <num>: Set the parameter to modulate with LFO. 1 for volume, 2 for tempo and 3 for period\n");
         break;
 
     case 'm':;
@@ -232,9 +237,67 @@ void handleCmd(CLI* self, CMD cmd) {
         break;
     }
 
+    case 'c':;
+    {
+        ASYNC(&candler, toggleCanId, 0);
+        break;
+    }
+
     case 'f':;
     {
-        ASYNC(&candler, toggleSeqNum, 0);
+        int frequency = cmd.arg;
+        if (frequency >= 2 && frequency <= 50) {
+            Time period = SEC(1) * 10 / frequency;
+            ASYNC(&lfOscillator, setLFOPeriod, period);
+            SCI_WRITE(self->sci, "Frequency set\n");
+        }
+        else {
+            SCI_WRITE(self->sci, "Frequency out of range\n");
+        }
+
+        break;
+    }
+
+
+    case 'i':;
+    {
+        int inten = cmd.arg;
+        if (inten >= 0 && inten <= 100) {
+            ASYNC(&lfOscillator, setLFOIntensity, inten);
+            SCI_WRITE(self->sci, "Intensity set\n");
+        }
+        else {
+            SCI_WRITE(self->sci, "Intensity out of range\n");
+        }
+
+        break;
+    }
+
+    case 'w':;
+    {
+        int wave = cmd.arg;
+        if (wave >= 1 && wave <= 3) {
+            ASYNC(&lfOscillator, setLFOWaveform, wave);
+            SCI_WRITE(self->sci, "Waveform set\n");
+        }
+        else {
+            SCI_WRITE(self->sci, "Not a waveform\n");
+        }
+
+        break;
+    }
+
+    case 'o':;
+    {
+        int param = cmd.arg;
+        if (param >= 1 && param <= 3) {
+            ASYNC(&lfOscillator, setLFOParameter, param);
+            SCI_WRITE(self->sci, "Target parameter set\n");
+        }
+        else {
+            SCI_WRITE(self->sci, "Not a parameter\n");
+        }
+
         break;
     }
 
