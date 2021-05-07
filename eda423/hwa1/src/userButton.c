@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define PRESS_AND_HOLD_THRESHOLD SEC(2)
+
 void pressAndHoldTrigger(UserButton*, int pressIndex);
 
 void initUserButton(UserButton* self, int config_ptr) {
@@ -35,7 +37,7 @@ void userButtonTrig(UserButton* self, int _) {
         self->trigger = RELEASED;
         T_RESET(&self->pressedTimer);
 
-        AFTER(SEC(2), self, pressAndHoldTrigger, self->pressId);
+        AFTER(PRESS_AND_HOLD_THRESHOLD, self, pressAndHoldTrigger, self->pressId);
 
         ForeignMethod fm = self->buttonConfig.onEnterPressMomentary;
         if(fm.obj) {
@@ -47,10 +49,10 @@ void userButtonTrig(UserButton* self, int _) {
         // TODO: figure out if this is a race condition (since we might miss a button event that happens before we get here)
         SIO_TRIG(self->sio, PRESSED);
         self->trigger = PRESSED;
-        int tmp = T_SAMPLE(&self->pressedTimer);
+        int pressDuration = T_SAMPLE(&self->pressedTimer);
         self->pressId++;
 
-        if (tmp <= MSEC(2000)) {
+        if (pressDuration <= PRESS_AND_HOLD_THRESHOLD) {
             ForeignMethod fm = self->buttonConfig.onExitPressMomentary;
             if(fm.obj) {
                 ASYNC(fm.obj, fm.meth, 0);
@@ -62,7 +64,7 @@ void userButtonTrig(UserButton* self, int _) {
             }
 
             char s[100];
-            snprintf(s, 100, "exit PRESS_AND_HOLD after %d.%03ds", SEC_OF(tmp), MSEC_OF(tmp));
+            snprintf(s, 100, "exit PRESS_AND_HOLD after %d.%03ds", SEC_OF(pressDuration), MSEC_OF(pressDuration));
             SYNC(&cliHandler, printLine, (int)s);
         }
         break;

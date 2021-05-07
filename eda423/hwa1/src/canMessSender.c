@@ -19,3 +19,8 @@ void canMessSenderStart(CanMessSender* self, int _) {
 void canMessSenderStop(CanMessSender* self, int _) {
     self->startId += 1;
 }
+
+void canMessOnce(CanMessSender* self, int _) {
+    Command cmd = {CMD_HELLO, 0};
+    SYNC(&candler, sendCommand, (int)&cmd);
+}

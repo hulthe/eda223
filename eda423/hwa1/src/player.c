@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include "lfo.h"
 
-Player player = { initObject(), (Song*)NULL, 0, MSEC(500), 0, 3, 0, 0};
+Player player = { initObject(), (Song*)NULL, 0, MSEC(500), 0, newLFOSample(), 3, 0, 0};
 
 const Time NOTE_SILENCE = MSEC(50);
 const Time PLAYER_DEADLINE = USEC(100);
@@ -52,6 +52,11 @@ void setPlayerTempo(Player* self, int receivedTempo) {
     self->baseTempo = MSEC((60 * 1000) / receivedTempo);
 }
 
+void setPlayerLFO(Player* self, int lfoSamplePtr) {
+    self->lfo = *(LFOSample*)lfoSamplePtr;
+}
+
+
 Time noteLength(const Player* self, const Note* note) {
     Time noteLength = self->baseTempo * note->tempo / BASE_BEAT;
     return noteLength;
@@ -74,14 +79,9 @@ void nextNote(Player* self, int _) {
     Time pauseLength = totalLength / 10;
     Time toneLength = totalLength - pauseLength;
 
-    // get LFO settings
-    LFO lfo;
-    SYNC(&lfOscillator, copyLFO, (int)&lfo);
-    SYNC(&toneGenerator, setGeneratorLFO, (int)&lfo);
-
     // Modulate tempo
-    if(lfo.param == Tempo) {
-        toneLength = lfoModulate(&lfo, toneLength);
+    if(self->lfo.param == Tempo) {
+        toneLength = lfoModulate(&self->lfo, toneLength);
     }
 
     { // LED blink

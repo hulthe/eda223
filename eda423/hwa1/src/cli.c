@@ -113,11 +113,11 @@ void handleCmd(CLI* self, CMD cmd) {
         SCI_WRITE(self->sci, "  v <num>: set the volume\n");
         SCI_WRITE(self->sci, "  k <num>: set the key\n");
         SCI_WRITE(self->sci, "  t <num>: set the tempo\n");
-        SCI_WRITE(self->sci, "  l:       toggle leader-mode\n");
-        SCI_WRITE(self->sci, "  c:       toggle ID of CAN messages\n");
-        SCI_WRITE(self->sci, "  i <num>: set the LFO intensity\n");
+        SCI_WRITE(self->sci, "  l:       toggle CAN leader/slave-mode\n");
+        SCI_WRITE(self->sci, "  c:       toggle printing info about CAN messages\n");
+        SCI_WRITE(self->sci, "  i <num>: set the LFO intensity to <num> percent\n");
         SCI_WRITE(self->sci, "  w <num>: set the LFO waveform. 1 for square wave, 2 for sawtooth wave and 3 for sinus wave\n");
-        SCI_WRITE(self->sci, "  f <num>: Set the LFO frequency\n");
+        SCI_WRITE(self->sci, "  f <num>: Set the LFO frequency to <num> dHz\n");
         SCI_WRITE(self->sci, "  o <num>: Set the parameter to modulate with LFO. 1 for volume, 2 for tempo and 3 for period\n");
         break;
 
@@ -252,7 +252,7 @@ void handleCmd(CLI* self, CMD cmd) {
             SCI_WRITE(self->sci, "Frequency set\n");
         }
         else {
-            SCI_WRITE(self->sci, "Frequency out of range\n");
+            SCI_WRITE(self->sci, "Frequency out of range [2, 50]dHz\n");
         }
 
         break;

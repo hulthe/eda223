@@ -44,7 +44,7 @@ int setGeneratorVolume(ToneGenerator* self, int volume) {
 }
 
 void setGeneratorLFO(ToneGenerator* self, int lfo) {
-    self->lfo = *((LFO*)lfo);
+    self->lfo = *(LFOSample*)lfo;
 }
 
 int toneGeneratorDeadline(ToneGenerator* self, int _) {
@@ -78,11 +78,6 @@ void toneGeneratorPulse(ToneGenerator* self, int high) {
     } else {
         dac_value = getGeneratorVolume(self, 0);
 
-        // WCET including modulation:
-        // - Best: 180ns
-        // - Worst: 1560ns
-        // - Average: 853ns
-        // - Samples: 1000
         if (self->lfo.param == Volume) {
             dac_value = lfoModulate(&self->lfo, dac_value);
         }

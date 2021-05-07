@@ -14,5 +14,6 @@ typedef struct {
 
 void canMessSenderStart(CanMessSender*, int _);
 void canMessSenderStop(CanMessSender*, int _);
+void canMessOnce(CanMessSender* self, int _);
 
 #endif

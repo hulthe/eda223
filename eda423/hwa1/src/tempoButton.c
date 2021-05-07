@@ -16,29 +16,29 @@ void tempoButtonTap(TempoButton* self, int _) {
         self->firstPress = 0;
         return;
     }
-    
+
     self->firstPress = 1;
 
     Time sinceLast = T_SAMPLE(&self->tapTimer);
-
-    //char s[100];
-    //snprintf(s, 100, "PRESS_MOMENTARY for %d.%03ds", SEC_OF(sinceLast), MSEC_OF(sinceLast));
-    //SYNC(&cliHandler, printLine, (int)s);
 
     if (sinceLast >= MSEC(200) && sinceLast <= MSEC(2000)) {
         int bpm = timeToBPM(sinceLast);
 
         char s[100];
-        snprintf(s, 100, "Nice beat. Setting BPM to %d.", bpm);
+        snprintf(s, 100, "Inter-arrival time: %d.%03ds. Setting BPM to %d.", SEC_OF(sinceLast), MSEC_OF(sinceLast), bpm);
         SYNC(&cliHandler, printLine, (int)s);
 
         Command command = {CMD_SET_TEMPO, bpm};
         SYNC(&candler, sendCommand, (int)&command);
     } else {
-        ASYNC(&cliHandler, printLine, (int)"Tempo out of range [200..2000]ms");
+        char s[100];
+        snprintf(s, 100, "Inter-arrival time: %d.%03ds. Out of range [0.2, 2]s", SEC_OF(sinceLast), MSEC_OF(sinceLast));
+        SYNC(&cliHandler, printLine, (int)s);
     }
 }
 
 void tempoButtonReset(TempoButton* self, int _) {
+    Command command = {CMD_SET_TEMPO, 120};
+    SYNC(&candler, sendCommand, (int)&command);
     SYNC(&cliHandler, printLine, (int)"tempoButtonReset");
 }

@@ -4,6 +4,7 @@
 #include "TinyTimber.h"
 #include "sioTinyTimber.h"
 #include "song.h"
+#include "lfo.h"
 #include <stdint.h>
 
 typedef struct {
@@ -13,6 +14,7 @@ typedef struct {
     uint32_t currentNote;
     Time baseTempo;
     int key;
+    LFOSample lfo;
     uint8_t volume;
     uint8_t muted;
     uint8_t nextNoteTaskActive;
@@ -31,6 +33,9 @@ void unmutePlayer(Player* self, int _);
 
 void setPlayerKey(Player* self, int receivedKey);
 void setPlayerTempo(Player* self, int tempo);
+
+// LFOSample* lfoSample
+void setPlayerLFO(Player* self, int lfoSample);
 
 // Song* song
 void playerPlay(Player* self, int song);

@@ -98,8 +98,11 @@ void deliverCanMsg(Candler* self, CANMsg msg) {
     command.arg = (int)n;
 
     if(self->canId == 1) {
+        Timer baseline0 = initTimer();
+        Time now = T_SAMPLE(&baseline0);
+
         char s[100];
-        snprintf(s, 100, "CAN command delivered. msgId=%d kind=%d", msg.msgId, msg.buff[0]);
+        snprintf(s, 100, "CAN command delivered. time=%d.%03d msgId=%d kind=%d", SEC_OF(now), MSEC_OF(now), msg.msgId, msg.buff[0]);
         SYNC(&cliHandler, printLine, (int)s);
     }
 
@@ -118,6 +121,12 @@ void popBuffer(Candler* self, int slot) {
 
     if (self->buffer.length > 0) {
         AFTER(MIN_MESSAGE_PERIOD, self, popBuffer, (slot + 1) % CAN_BUFFER_CAPACITY);
+    }
+
+    if (self->canId == 1) {
+        char s[100];
+        snprintf(s, 100, "Messages left in queue: %d", self->buffer.length);
+        SYNC(&cliHandler, printLine, (int)s);
     }
 
 #ifdef MEASURE_POPBUFFER_WCET
@@ -143,21 +152,22 @@ void recvCanMsg(Candler* self, int _) {
     CANMsg msg;
     CAN_RECEIVE(&can0, &msg);
 
+    Timer baseline0 = initTimer();
+    Time now = T_SAMPLE(&baseline0);
+
     if(self->canId == 1) {
         char s[100];
-        snprintf(s, 100, "CAN command arrived. msgId=%d kind=%d", msg.msgId, msg.buff[0]);
+        snprintf(s, 100, "CAN command arrived. time=%d.%03d msgId=%d kind=%d", SEC_OF(now), MSEC_OF(now), msg.msgId, msg.buff[0]);
         SYNC(&cliHandler, printLine, (int)s);
     }
 
     // if board is in slave-mode, execute the command
     if (!self->leader) {
-        Timer baseline0 = initTimer();
-        Time now = T_SAMPLE(&baseline0);
-        Time target = self->lastMsgRecieved + MIN_MESSAGE_PERIOD;
+        Time target = self->lastMsgDelivered + MIN_MESSAGE_PERIOD;
 
         if (now >= target) {
             deliverCanMsg(self, msg);
-            self->lastMsgRecieved = now;
+            self->lastMsgDelivered = now;
         } else if (self->buffer.length >= CAN_BUFFER_CAPACITY) {
             // no more space in buffer
             SYNC(&cliHandler, printLine, (int)"Message buffer is full");
@@ -165,7 +175,7 @@ void recvCanMsg(Candler* self, int _) {
             int index = self->buffer.currPlace;
             self->buffer.currPlace = (index + 1) % CAN_BUFFER_CAPACITY;
             self->buffer.array[index] = msg;
-            self->lastMsgRecieved = target;
+            self->lastMsgDelivered = target;
 
             if (self->buffer.length++ == 0) {
                 AFTER(target - now, self, popBuffer, index);

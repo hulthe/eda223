@@ -9,7 +9,7 @@
 typedef struct {
     Object super;
     WCETSampler wcet;
-    LFO lfo;
+    LFOSample lfo;
     Time period;
     int enableDeadlines;
     uint8_t volume;
@@ -17,7 +17,7 @@ typedef struct {
 } ToneGenerator;
 
 #define newToneGenerator() \
-    { initObject(), newWCETSampler("Tone Generator", 1000), newLFO(), USEC(1000), 1, 0, 3 };
+    { initObject(), newWCETSampler("Tone Generator", 1000), newLFOSample(), USEC(1000), 1, 0, 3 };
 
 extern ToneGenerator toneGenerator;
 
@@ -29,7 +29,7 @@ void muteGenerator(ToneGenerator* self, int _);
 void unmuteGenerator(ToneGenerator* self, int _);
 int toneGeneratorDeadline(ToneGenerator* self, int _);
 
-// LFO* lfo;
+// LFOSample* lfo;
 void setGeneratorLFO(ToneGenerator* self, int lfo);
 
 void toneGeneratorPulse(ToneGenerator* self, int high);

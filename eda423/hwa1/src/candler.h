@@ -32,7 +32,7 @@ typedef struct {
 typedef struct {
     Object super;
     WCETSampler wcet;
-    Time lastMsgRecieved;
+    Time lastMsgDelivered;
     CANBuffer buffer;
     uint8_t leader;
     uint8_t nextMsgId;

@@ -14,7 +14,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define PROBLEM_2
+// Uncomment this to switch User button to the proper mode for HWA1 Problem 2
+// At runtime, send commands l to switch to CAN slave mode and c to enable CAN regulator printouts
+//#define PROBLEM_2
 
 typedef struct {
     Object super;
@@ -60,12 +62,14 @@ void startApp(App *self, int arg) {
     buttonConfig.onExitPressMomentary = foreignMethod(&tempoButton, tempoButtonTap);
     buttonConfig.onEnterPressAndHold = foreignMethod(&tempoButton, tempoButtonReset);
 #else
+    buttonConfig.onEnterPressMomentary = foreignMethod(&canMessSender, canMessOnce);
     buttonConfig.onEnterPressAndHold = foreignMethod(&canMessSender, canMessSenderStart);
     buttonConfig.onExitPressAndHold = foreignMethod(&canMessSender, canMessSenderStop);
 #endif
     SYNC(&userButton, initUserButton, (int)&buttonConfig);
 
     ASYNC(&toneGenerator, toneGeneratorPulse, 0);
+    ASYNC(&lfOscillator, lfoLoop, 0);
 }
 
 int main() {

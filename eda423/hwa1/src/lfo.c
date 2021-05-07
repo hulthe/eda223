@@ -1,56 +1,37 @@
 #include "lfo.h"
 #include "cli.h"
+#include "player.h"
+#include "toneGenerator.h"
+#include <stdio.h>
+
+//#define LFO_PRINT_SAMPLES
 
 LFOObject lfOscillator = newLFOObject();
 
-int SIN_WAVE_TABLE[100];
+#define SIN_STEPS 16
+#define SAW_STEPS 15
 
-int lfoMod(LFO* self) {
-    Time now = T_SAMPLE(&self->start);
+int SIN_WAVE_TABLE[SIN_STEPS];
+int SAW_WAVE_TABLE[SAW_STEPS];
 
-    Time inWave = now % self->period;
-    int waveProgress = inWave * 100 / self->period;
-
-    switch (self->waveform) {
-    case SquareWave:;
-        if (waveProgress < 50) {
-            return -100;
-        } else {
-            return 100;
-        }
-        break;
-
-    case SawtoothWave:;
-        return -100 + 2 * waveProgress;
-
-    case SinusWave:;
-        return SIN_WAVE_TABLE[waveProgress];
-    
-    default:;
-        ASYNC(&cliHandler, printLine, (int)"ERROR: invalid LFO waveform specified.");
-        return 0;
-    }
-}
-
-int lfoModulate(LFO* self, int volume) {
-    int intesityMod = lfoMod(self) * self->intensity / 100;
-    return volume * (100 + intesityMod) / 100;
+int lfoModulate(LFOSample* self, int value) {
+    return value * (100 + self->mod) / 100;
 }
 
 void setLFOIntensity(LFOObject* self, int inten) {
-    self->lfo.intensity = inten;
+    self->intensity = inten;
 }
 
 void setLFOWaveform(LFOObject* self, int wave) {
     switch (wave) {
         case 1:;
-            self->lfo.waveform = SquareWave;
+            self->waveform = SquareWave;
             break;
         case 2:;
-            self->lfo.waveform = SawtoothWave;
+            self->waveform = SawtoothWave;
             break;
         case 3:;
-            self->lfo.waveform = SinusWave;
+            self->waveform = SinusWave;
             break;
         default:;
             break;
@@ -58,129 +39,90 @@ void setLFOWaveform(LFOObject* self, int wave) {
 }
 
 void setLFOPeriod(LFOObject* self, int period) {
-    self->lfo.period = period;
+    self->period = period;
 }
 
 void setLFOParameter(LFOObject* self, int param) {
     switch (param) {
         case 1:;
-            self->lfo.param = Volume;
+            self->param = Volume;
             break;
         case 2:;
-            self->lfo.param = Tempo;
+            self->param = Tempo;
             break;
         case 3:;
-            self->lfo.param = Period;
+            self->param = Period;
             break;
         default:;
             break;
     }
 }
 
-void copyLFO(LFOObject* self, int out_ptr) {
-    LFO* out = (LFO*)out_ptr;
-    *out = self->lfo;
+void sendLFOSample(LFOObject* self, LFOSample sample) {
+    sample.param = self->param;
+    sample.mod = sample.mod * self->intensity / 100;
+
+#ifdef LFO_PRINT_SAMPLES
+    char s[100];
+    snprintf(s, 100, "LFO Sample. param=%d mod=%d%%", sample.param, sample.mod);
+    SYNC(&cliHandler, printLine, (int)s);
+#endif
+
+    SYNC(&player, setPlayerLFO, (int)&sample);
+    SYNC(&toneGenerator, setGeneratorLFO, (int)&sample);
 }
 
-int SIN_WAVE_TABLE[100] = {
-    0,
-    6,
-    12,
-    18,
-    24,
-    30,
-    36,
-    42,
-    48,
-    53,
-    58,
-    63,
-    68,
-    72,
-    77,
-    80,
-    84,
-    87,
-    90,
-    92,
-    95,
-    96,
-    98,
-    99,
-    99,
-    100,
-    99,
-    99,
-    98,
-    96,
-    95,
-    92,
-    90,
-    87,
-    84,
-    80,
-    77,
-    72,
-    68,
-    63,
-    58,
-    53,
-    48,
-    42,
-    36,
-    30,
-    24,
-    18,
-    12,
-    6,
-    0,
-    -6,
-    -12,
-    -18,
-    -24,
-    -30,
-    -36,
-    -42,
-    -48,
-    -53,
-    -58,
-    -63,
-    -68,
-    -72,
-    -77,
-    -80,
-    -84,
-    -87,
-    -90,
-    -92,
-    -95,
-    -96,
-    -98,
-    -99,
-    -99,
-    -100,
-    -99,
-    -99,
-    -98,
-    -96,
-    -95,
-    -92,
-    -90,
-    -87,
-    -84,
-    -80,
-    -77,
-    -72,
-    -68,
-    -63,
-    -58,
-    -53,
-    -48,
-    -42,
-    -36,
-    -30,
-    -24,
-    -18,
-    -12,
-    -6,
-};
+void lfoSinWave(LFOObject* self, int progress) {
+    if (progress < SIN_STEPS) {
+        AFTER(self->period / SIN_STEPS, self, lfoSinWave, progress + 1);
+    } else {
+        AFTER(self->period / SIN_STEPS, self, lfoLoop, 0);
+    }
+
+    LFOSample out;
+    out.mod = SIN_WAVE_TABLE[progress];
+
+    sendLFOSample(self, out);
+}
+
+void lfoSawWave(LFOObject* self, int progress) {
+    if (progress < SAW_STEPS) {
+        AFTER(self->period / SAW_STEPS, self, lfoSawWave, progress + 1);
+    } else {
+        AFTER(self->period / SAW_STEPS, self, lfoLoop, 0);
+    }
+
+    LFOSample out;
+    out.mod = SAW_WAVE_TABLE[progress];
+
+    sendLFOSample(self, out);
+}
+
+void lfoSetSample(LFOObject* self, int mod) {
+    LFOSample out;
+    out.mod = mod;
+    sendLFOSample(self, out);
+}
+
+void lfoLoop(LFOObject* self, int _) {
+    switch (self->waveform) {
+        case SquareWave:;
+            ASYNC(self, lfoSetSample, -100);
+            AFTER(self->period / 2, self, lfoSetSample, 100);
+            AFTER(self->period, self, lfoLoop, 0);
+            break;
+        case SawtoothWave:;
+            ASYNC(self, lfoSawWave, 0);
+            break;
+        case SinusWave:;
+            ASYNC(self, lfoSinWave, 0);
+            break;
+        default:;
+            ASYNC(&cliHandler, printLine, (int)"Unknown LFO param");
+            AFTER(self->period, self, lfoLoop, 0);
+            // do nothing
+    }
+}
+
+int SIN_WAVE_TABLE[SIN_STEPS] = { 0, 40, 74, 95, 99, 86, 58, 20, -20, -58, -86, -99, -95, -74, -40 };
+int SAW_WAVE_TABLE[SAW_STEPS] = { -100, -85, -71, -57, -42, -28, -14, 0, 14, 28, 42, 57, 71, 85, 100 };

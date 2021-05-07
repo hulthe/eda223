@@ -12,23 +12,23 @@ typedef enum {
 } LFOParam;
 
 typedef struct {
+    int mod;
+    LFOParam param;
+} LFOSample;
+
+#define newLFOSample() { 0 }
+
+typedef struct {
+    Object super;
     Timer start;
     Time period;
     int intensity;
     Waveform waveform;
     LFOParam param;
-} LFO;
-
-#define newLFO() \
-    { initTimer(), SEC(1), 0, SinusWave, Volume }
-
-typedef struct {
-    Object super;
-    LFO lfo;
 } LFOObject;
 
 #define newLFOObject() \
-    { initObject(), newLFO() }
+    { initObject(), initTimer(), SEC(1), 0, SinusWave, Volume }
 
 extern LFOObject lfOscillator;
 
@@ -37,12 +37,9 @@ void setLFOWaveform(LFOObject* self, int wave);
 void setLFOPeriod(LFOObject* self, int period);
 void setLFOParameter(LFOObject* self, int param);
 
-// LFO* out
-//
-// Copy the current LFO to *out
-void copyLFO(LFOObject* self, int out);
+void lfoLoop(LFOObject* self, int _);
 
 // Not an object method, can't be called through TinyTimber
-int lfoModulate(LFO* self, int value);
+int lfoModulate(LFOSample* self, int value);
 
 #endif
